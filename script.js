@@ -44,6 +44,7 @@ const gameResultOverlay = document.getElementById('game-result-overlay');
 const gameViewerContainer = document.getElementById('game-3d-viewer');
 
 let gameTimerInterval;
+let toastInterval;
 let timeLeft = 60;
 let currentGameIndex = 0;
 let gameScene, gameCamera, gameRenderer, gameControls, gameModel;
@@ -658,6 +659,72 @@ function updateNarrativeSidebars(index) {
     rightSide.innerHTML = iconsHtml;
 }
 
+async function startToastNotifications(index) {
+    clearInterval(toastInterval);
+    const containerLeft = document.getElementById('game-toast-container-left');
+    const containerRight = document.getElementById('game-toast-container-right');
+    if (!containerLeft || !containerRight) return;
+
+    containerLeft.innerHTML = '';
+    containerRight.innerHTML = '';
+
+    try {
+        // 현재 아이템에 대한 과거 랭킹 데이터를 무작위로 가져오기 (가장 최근 데이터 위주)
+        const { data, error } = await supabase
+            .from('rankings')
+            .select('nickname, price')
+            .eq('object_index', index)
+            .order('created_at', { ascending: false })
+            .limit(30);
+
+        if (error || !data || data.length === 0) return;
+
+        // 데이터를 무작위로 섞음
+        const shuffledData = data.sort(() => 0.5 - Math.random());
+        let msgIndex = 0;
+        let isLeftTurn = true; // 좌우 번갈아 나오도록 하는 플래그
+
+        // 2초 ~ 4초 사이 랜덤한 주기로 토스트 발생
+        function showNextToast() {
+            if (msgIndex >= shuffledData.length) msgIndex = 0; // 반복
+
+            const record = shuffledData[msgIndex++];
+            const toast = document.createElement('div');
+            toast.className = 'game-toast';
+
+            // 텍스트 양식 통일
+            toast.innerHTML = `<span>${record.nickname}님은 <span class="toast-price">${record.price.toLocaleString()}.00 DZC</span>로 감정했습니다.</span>`;
+
+            const targetContainer = isLeftTurn ? containerLeft : containerRight;
+            targetContainer.appendChild(toast);
+
+            // 다음 턴 방향 전환
+            isLeftTurn = !isLeftTurn;
+
+            // 약간의 딜레이 후 show 클래스 추가 (애니메이션)
+            setTimeout(() => {
+                toast.classList.add('show');
+            }, 50);
+
+            // 일정 시간 후 사라짐
+            setTimeout(() => {
+                toast.classList.remove('show');
+                setTimeout(() => toast.remove(), 500); // 부드러운 애니메이션 시간 후 DOM에서 제거
+            }, 4000);
+
+            // 다음 토스트 예약 (2초 ~ 4초 간격)
+            const nextDelay = Math.random() * 2000 + 2000;
+            toastInterval = setTimeout(showNextToast, nextDelay);
+        }
+
+        // 첫 번째 토스트는 2초 후 띄우기
+        toastInterval = setTimeout(showNextToast, 2000);
+
+    } catch (e) {
+        console.error("Toast fetch error:", e);
+    }
+}
+
 function startBiddingGame(index) {
     currentGameIndex = index;
     const data = productData[index - 1];
@@ -696,6 +763,9 @@ function startBiddingGame(index) {
         const ext = (index === 5) ? 'glb' : 'obj';
         loadGameModel(`obj${index}.${ext}`, ext);
     }, 100);
+
+    // 토스트 알림 시작
+    startToastNotifications(index);
 }
 
 gamePriceSlider.addEventListener('input', () => {
@@ -712,6 +782,7 @@ document.getElementById('game-submit-btn').addEventListener('click', () => endGa
 
 async function endGame(status) {
     clearInterval(gameTimerInterval);
+    clearInterval(toastInterval);
     const userVal = parseInt(gamePriceSlider.value);
     const targetVal = productData[currentGameIndex - 1].target;
 

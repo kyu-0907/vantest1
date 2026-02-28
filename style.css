@@ -1188,3 +1188,83 @@ video {
 .ranking-nav-btn:hover {
     background: #333;
 }
+
+/* 토스트 알림 컨테이너 */
+.toast-container {
+    position: absolute;
+    top: 15%;
+    /* 약간 더 아래 배치 */
+    display: flex;
+    flex-direction: column-reverse;
+    /* 위로 쌓이게 */
+    gap: 1vw;
+    z-index: 50;
+    pointer-events: none;
+}
+
+.toast-container.left {
+    left: 4%;
+    align-items: flex-start;
+}
+
+.toast-container.right {
+    right: 4%;
+    align-items: flex-end;
+}
+
+/* 아름답고 세련된 토스트 디자인 */
+.game-toast {
+    background: rgba(15, 15, 15, 0.6);
+    /* 좀 더 투명하고 다크한 톤 */
+    backdrop-filter: blur(10px);
+    /* 유리 질감 추가 */
+    -webkit-backdrop-filter: blur(10px);
+    color: rgba(225, 225, 225, 0.8);
+    padding: 0.8vw 1.2vw;
+    border-radius: 2px;
+    /* 모서리는 각지게 하거나 살짝만 */
+    font-size: 0.8vw;
+    font-weight: 300;
+    letter-spacing: 0.05vw;
+    border: 1.5px solid rgba(180, 180, 180, 0.3);
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.8);
+    opacity: 0;
+    transition: opacity 0.5s cubic-bezier(0.25, 1, 0.5, 1), transform 0.5s cubic-bezier(0.25, 1, 0.5, 1);
+    display: flex;
+    align-items: center;
+    gap: 0.8vw;
+}
+
+
+
+.toast-container.left .game-toast {
+    transform: translateX(-30px);
+}
+
+.toast-container.right .game-toast {
+    transform: translateX(30px);
+}
+
+.toast-container.left .game-toast.show {
+    opacity: 1;
+    transform: translateX(0);
+}
+
+.toast-container.right .game-toast.show {
+    opacity: 1;
+    transform: translateX(0);
+}
+
+.toast-price {
+    font-weight: 700;
+    color: #ffffff;
+}
+
+.toast-name {
+    color: rgba(255, 255, 255, 0.7);
+    font-weight: 400;
+}
+
+.toast-desc {
+    color: rgba(255, 255, 255, 0.9);
+}
