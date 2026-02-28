@@ -1,11 +1,12 @@
 // [DEBUG] script.js 로드 확인
 console.log("VAN: script.js loaded");
 
-// 전역 에러 통찰기
-window.onerror = function (message, source, lineno, colno, error) {
-    console.error(`Status Error: ${message} at ${source}:${lineno}`);
-    return false;
-};
+// Supabase Initialization
+var SUPABASE_URL = 'https://skjhxxmtusiztybytznd.supabase.co';
+var SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNramh4eG10dXNpenR5Ynl0em5kIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzIyMzM5MzcsImV4cCI6MjA4NzgwOTkzN30.LS0wHpEAQZLOwkjvR8hF8BkWbYWPescJC0peMr4R9zs';
+var supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+var currentUserNickname = ''; // 유저 닉네임 저장용
 
 // Three.js 전역 싱글톤 변수
 let scene, camera, renderer, controls, currentModel;
@@ -69,8 +70,29 @@ const productData = [
 
 // --- Flow Control ---
 
-introScreen.addEventListener('click', () => introScreen.classList.remove('active'));
+// 첫 클릭 시, 화면 덜컹거림(screen1) 없이 바로 영상(videoScreen)으로 전환
+introScreen.addEventListener('click', () => {
+    introScreen.classList.remove('active');
 
+    // screen1(첫 번째 이미지)는 거치지 않고 바로 영상 재생
+    if (screen1.classList.contains('active')) {
+        screen1.classList.remove('active');
+    }
+
+    videoScreen.classList.add('active');
+
+    // 브라우저 정책(Autoplay) 우회 및 자연스러운 영상 재생
+    const playPromise = video.play();
+    if (playPromise !== undefined) {
+        playPromise.catch((error) => {
+            console.log("Video play prevented:", error);
+            // 만약 브라우저가 막는다면 사용자가 한 번 더 클릭하도록 유도 가능하나,
+            // 이미 사용자 동작(클릭)으로 트리거되었으므로 대부분 정상 작동합니다.
+        });
+    }
+});
+
+// 기존 screen1 단독 클릭 이벤트는 삭제 또는 비활성화 처리
 screen1.addEventListener('click', () => {
     screen1.classList.remove('active');
     videoScreen.classList.add('active');
@@ -124,6 +146,7 @@ function goToScreen3() {
 submitBtn.addEventListener('click', () => {
     const name = document.getElementById('username-input').value;
     if (name) {
+        currentUserNickname = name; // 글로벌 변수에 저장
         imacLogin.classList.remove('active');
         imacProducts.classList.add('active');
         generateProducts();
@@ -312,11 +335,53 @@ function openAuctionRoom(index) {
     document.getElementById('item-condition').textContent = data.condition;
     document.getElementById('artifact-description').textContent = data.desc;
 
+    // Supabase 랭킹 목록 업데이트 호출
+    updateAuctionRoomRankings(index);
+
     setTimeout(() => {
         initThreeJS();
         const ext = (index === 5) ? 'glb' : 'obj';
         loadModel(`obj${index}.${ext}`, ext);
     }, 100);
+}
+
+// 옥션룸 우측 라이브 랭킹 업데이트
+async function updateAuctionRoomRankings(index) {
+    const biddingList = document.querySelector('.auction-right .bidding-list');
+    biddingList.innerHTML = '<div class="bidding-item"><span class="bid-rank">로딩 중...</span></div>';
+
+    try {
+        const { data, error } = await supabase
+            .from('rankings')
+            .select('*')
+            .eq('object_index', index)
+            .order('accuracy', { ascending: false })
+            .order('created_at', { ascending: true })
+            .limit(10);
+
+        if (error) throw error;
+
+        biddingList.innerHTML = '';
+        if (data.length === 0) {
+            biddingList.innerHTML = '<div class="bidding-item"><span class="bid-rank">아직 입찰 기록이 없습니다.</span></div>';
+            return;
+        }
+
+        data.forEach((rank, i) => {
+            const isTop = i === 0;
+            const itemClass = isTop ? 'bidding-item' : 'bidding-item sub';
+            const priceClass = isTop ? 'bid-price' : 'bid-price sub';
+            biddingList.innerHTML += `
+                <div class="${itemClass}">
+                    <span class="bid-rank">${i + 1}. ${rank.nickname}</span>
+                    <span class="${priceClass}">${rank.price.toLocaleString()} DZC</span>
+                </div>
+            `;
+        });
+    } catch (e) {
+        console.error("Ranking fetch error:", e);
+        biddingList.innerHTML = '<div class="bidding-item"><span class="bid-rank">순위를 불러오는데 실패했습니다.</span></div>';
+    }
 }
 
 function loadModel(fileName, type) {
@@ -597,6 +662,22 @@ function startBiddingGame(index) {
     currentGameIndex = index;
     const data = productData[index - 1];
     document.getElementById('game-item-name').textContent = data.name;
+
+    // 타겟값이 항상 스크롤바 정중앙(50%)에 오면 유저가 정답을 유추할 수 있으므로
+    // 오브제 번호(index)에 따라 1.4배 ~ 2.6배율로 불규칙하게 최대 범위를 산정합니다.
+    const randomMultiplier = 1.4 + ((index * 7) % 13) * 0.1;
+    const rawMax = data.target * randomMultiplier;
+
+    // 타겟값에 맞춰 슬라이더 최대치를 유동적으로 설정 (적어도 15,000 DZC 이상은 되도록)
+    const maxSliderValue = Math.max(15000, Math.ceil(rawMax / 5000) * 5000);
+    gamePriceSlider.max = maxSliderValue;
+
+    // 라벨 텍스트도 동적으로 변경
+    const sliderLabels = document.querySelectorAll('.slider-labels span');
+    if (sliderLabels.length >= 2) {
+        sliderLabels[1].textContent = maxSliderValue.toLocaleString() + ".00";
+    }
+
     gamePriceSlider.value = 0;
     gameCurrentValue.textContent = "0";
     gameResultOverlay.style.display = 'none';
@@ -621,17 +702,52 @@ gamePriceSlider.addEventListener('input', () => {
     gameCurrentValue.textContent = parseInt(gamePriceSlider.value).toLocaleString();
 });
 
+// 리셋 버튼 기능 추가
+document.getElementById('game-reset-btn').addEventListener('click', () => {
+    gamePriceSlider.value = 0;
+    gameCurrentValue.textContent = "0";
+});
+
 document.getElementById('game-submit-btn').addEventListener('click', () => endGame("SUBMITTED!"));
 
-function endGame(status) {
+async function endGame(status) {
     clearInterval(gameTimerInterval);
     const userVal = parseInt(gamePriceSlider.value);
     const targetVal = productData[currentGameIndex - 1].target;
+
+    // 타겟값 대비 슬라이더의 최대 가능 범위를 고려해 최대 오차 산출
+    const maxSliderVal = parseInt(gamePriceSlider.max);
+    const maxDiff = Math.max(targetVal, maxSliderVal - targetVal);
+
+    // 현재 오차
     const diff = Math.abs(targetVal - userVal);
-    const accuracy = Math.max(0, 100 - (diff / targetVal * 100)).toFixed(1);
+
+    // 0.0%가 나오지 않도록 기본 점수 부여 (최소 1.5%)
+    const minAccuracy = 1.5;
+
+    // 완전히 틀렸을 때(= 최대오차) 1.5%, 정답일 때 100%가 나오도록 선형(Linear) 비례식 적용
+    const calculatedAccuracy = minAccuracy + ((1 - (diff / maxDiff)) * (100 - minAccuracy));
+    const accuracy = Math.max(minAccuracy, calculatedAccuracy); // 확실한 하한선 적용
+
     document.getElementById('result-status').textContent = status;
-    document.getElementById('game-result-text').innerHTML = `정확도: ${accuracy}% (IEAA: ${targetVal.toLocaleString()} DZC)`;
+    document.getElementById('game-result-text').innerHTML = `정확도: ${accuracy.toFixed(1)}% (IEAA: ${targetVal.toLocaleString()} DZC)<br><span style="font-size: 0.8em; margin-top: 5px; display: inline-block;">(기록 저장 중...)</span>`;
     gameResultOverlay.style.display = 'flex';
+
+    try {
+        await supabase.from('rankings').insert([
+            {
+                nickname: currentUserNickname || "익명",
+                object_index: currentGameIndex,
+                price: userVal,
+                target_price: targetVal,
+                accuracy: accuracy
+            }
+        ]);
+        document.getElementById('game-result-text').innerHTML = `정확도: ${accuracy.toFixed(1)}% (IEAA: ${targetVal.toLocaleString()} DZC)<br><span style="font-size: 0.8em; color: #4CAF50; margin-top: 5px; display: inline-block;">(기록 저장 완료)</span>`;
+    } catch (e) {
+        console.error("Save rank error:", e);
+        document.getElementById('game-result-text').innerHTML = `정확도: ${accuracy.toFixed(1)}% (IEAA: ${targetVal.toLocaleString()} DZC)<br><span style="font-size: 0.8em; color: #f44336; margin-top: 5px; display: inline-block;">(기록 저장 실패)</span>`;
+    }
 }
 
 const checkRankBtn = document.getElementById('check-rank-btn');
@@ -641,7 +757,47 @@ if (checkRankBtn) {
         imacBiddingGame.classList.remove('active');
         document.getElementById('imac-ranking').classList.add('active');
         updateRankingSidebars();
+        loadFinalRankings(currentGameIndex);
     });
+}
+
+// 최종 랭킹 불러오기
+async function loadFinalRankings(index) {
+    const rankingBody = document.querySelector('.ranking-scroll-body');
+    if (!rankingBody) return;
+
+    rankingBody.innerHTML = '<div class="ranking-row main-rank"><span class="rank-name">랭킹 데이터 로딩 중...</span></div>';
+
+    try {
+        const { data, error } = await supabase
+            .from('rankings')
+            .select('*')
+            .eq('object_index', index)
+            .order('accuracy', { ascending: false })
+            .order('created_at', { ascending: true })
+            .limit(20);
+
+        if (error) throw error;
+
+        rankingBody.innerHTML = '';
+        if (data.length === 0) {
+            rankingBody.innerHTML = '<div class="ranking-row sub-rank"><span class="rank-name">아직 입찰 기록이 없습니다.</span></div>';
+            return;
+        }
+
+        data.forEach((rank, i) => {
+            const rowClass = i === 0 ? 'ranking-row main-rank' : 'ranking-row sub-rank';
+            rankingBody.innerHTML += `
+                <div class="${rowClass}">
+                    <span class="rank-name">${i + 1}순위 ${rank.nickname}</span>
+                    <span class="rank-value">${rank.price.toLocaleString()} DZC (${rank.accuracy.toFixed(1)}%)</span>
+                </div>
+            `;
+        });
+    } catch (e) {
+        console.error("Ranking fetch error:", e);
+        rankingBody.innerHTML = '<div class="ranking-row sub-rank"><span class="rank-name">순위를 불러오는데 실패했습니다.</span></div>';
+    }
 }
 
 function updateRankingSidebars() {

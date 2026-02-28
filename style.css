@@ -21,14 +21,23 @@ html {
     left: 0;
     width: 100%;
     height: 100%;
-    display: none;
+    display: flex;
+    /* 레이아웃 유지를 위해 계속 flex 상태지만 안보이게 처리 */
     justify-content: center;
     align-items: center;
     cursor: pointer;
+
+    /* 화면 덜컹임 방지용 부드러운 디졸브(크로스페이드) 트랜지션 */
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.5s ease-out, visibility 0.5s ease-out;
+    background-color: #000;
+    /* 각 씬 전환 시 뒷배경 노출 방지 */
 }
 
 .screen.active {
-    display: flex;
+    opacity: 1;
+    visibility: visible;
 }
 
 /* 인트로 화면 스타일 */
@@ -161,17 +170,25 @@ video {
 
 .imac-overlay {
     position: absolute;
-    top: 6%;
-    left: 17%;
-    width: 45%;
-    height: 55%;
+    /* 모니터 핏에 맞게 수치 미세조정 */
+    top: 11%;
+    left: 19.5%;
+    width: 42.5%;
+    height: 49%;
     display: flex;
     justify-content: center;
     align-items: center;
     pointer-events: auto;
     overflow: hidden;
     background-color: #000;
-    /* transition 없음: 클릭 시 즉시 전환 */
+
+    /* 맥 모니터의 입체감 및 굴곡 효과 (필요 시 주석 부분 수정) */
+    border-radius: 4% / 5%;
+    /* 브라운관, 오래된 모니터처럼 약간 둥근 테두리 */
+    box-shadow: inset 0 0 1vw rgba(255, 255, 255, 0.1), inset 0 0 3vw rgba(0, 0, 0, 0.7);
+    /* 안쪽 빛반사와 그림자로 깊이감 부여 (transform 원래대로 롤백!) */
+
+    transition: width 0.3s, height 0.3s, top 0.3s, left 0.3s, border-radius 0.3s, box-shadow 0.3s;
 }
 
 /* 줌인 완료 상태: 화면 전체 */
@@ -180,6 +197,12 @@ video {
     left: 0;
     width: 100%;
     height: 100%;
+    border-radius: 0;
+    /* 줌인 시 둥근 모서리 풀림 */
+    box-shadow: none;
+    /* 그림자 제거 */
+    transform: none;
+    /* 기울기 제거 */
 }
 
 /* 배경 이미지: 즉시 숨김 */
@@ -208,7 +231,7 @@ video {
     flex-direction: column;
     justify-content: center;
     align-items: center;
-    padding-left: 5vw;
+    padding-left: 3vw;
     transition: padding 0.5s;
 }
 
@@ -220,16 +243,16 @@ video {
 }
 
 .login-logo {
-    width: 6vw;
+    width: 9vw;
     height: auto;
-    margin-bottom: 2vw;
+    margin-bottom: 2.5vw;
     transition: width 0.5s, margin 0.5s;
 }
 
 /* 줌인 후 로고 크게 */
 .imac-overlay.zoomed .login-logo {
-    width: 10vw;
-    margin-bottom: 3vw;
+    width: 12vw;
+    margin-bottom: 3.5vw;
 }
 
 .login-container {
@@ -344,31 +367,31 @@ video {
 
 .login-msg {
     color: #fff;
-    font-size: 0.8vw;
-    margin-bottom: 1.5vw;
+    font-size: 1vw;
+    margin-bottom: 2vw;
     word-break: keep-all;
 }
 
 #username-input {
     width: 80%;
-    padding: 0.5vw;
+    padding: 0.8vw;
     background: transparent;
     border: none;
-    border-bottom: 1px solid #fff;
+    border-bottom: 2px solid #fff;
     color: #fff;
     font-family: 'Pretendard', sans-serif;
-    font-size: 0.7vw;
+    font-size: 1vw;
     outline: none;
     text-align: center;
-    margin-bottom: 1.5vw;
+    margin-bottom: 2vw;
 }
 
 .i-btn {
     background: transparent;
     border: 1px solid #fff;
     color: #fff;
-    padding: 0.3vw 1.5vw;
-    font-size: 0.6vw;
+    padding: 0.5vw 2vw;
+    font-size: 0.9vw;
     cursor: pointer;
     font-family: 'Pretendard', sans-serif;
     transition: all 0.3s;
@@ -376,10 +399,10 @@ video {
 }
 
 .imac-overlay.zoomed #username-input {
-    font-size: 1.2vw;
-    padding: 0.8vw;
-    margin-bottom: 2vw;
-    width: 30vw;
+    font-size: 1.5vw;
+    padding: 1vw;
+    margin-bottom: 2.5vw;
+    width: 35vw;
 }
 
 .imac-overlay.zoomed .i-btn {
