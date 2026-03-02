@@ -801,7 +801,7 @@ async function endGame(status) {
     const accuracy = Math.max(minAccuracy, calculatedAccuracy); // 확실한 하한선 적용
 
     document.getElementById('result-status').textContent = status;
-    document.getElementById('game-result-text').innerHTML = `정확도: ${accuracy.toFixed(1)}% (IEAA: ${targetVal.toLocaleString()} DZC)<br><span style="font-size: 0.8em; margin-top: 5px; display: inline-block;">(기록 저장 중...)</span>`;
+    document.getElementById('game-result-text').innerHTML = `정확도: ${accuracy.toFixed(1)}% (VAN: ${targetVal.toLocaleString()} DZC)`;
     gameResultOverlay.style.display = 'flex';
 
     try {
@@ -814,10 +814,10 @@ async function endGame(status) {
                 accuracy: accuracy
             }
         ]);
-        document.getElementById('game-result-text').innerHTML = `정확도: ${accuracy.toFixed(1)}% (IEAA: ${targetVal.toLocaleString()} DZC)<br><span style="font-size: 0.8em; color: #4CAF50; margin-top: 5px; display: inline-block;">(기록 저장 완료)</span>`;
+        document.getElementById('game-result-text').innerHTML = `정확도: ${accuracy.toFixed(1)}% (VAN: ${targetVal.toLocaleString()} DZC)`;
     } catch (e) {
         console.error("Save rank error:", e);
-        document.getElementById('game-result-text').innerHTML = `정확도: ${accuracy.toFixed(1)}% (IEAA: ${targetVal.toLocaleString()} DZC)<br><span style="font-size: 0.8em; color: #f44336; margin-top: 5px; display: inline-block;">(기록 저장 실패)</span>`;
+        document.getElementById('game-result-text').innerHTML = `정확도: ${accuracy.toFixed(1)}% (VAN: ${targetVal.toLocaleString()} DZC)`;
     }
 }
 
