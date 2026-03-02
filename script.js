@@ -173,7 +173,7 @@ function createProductCard(i) {
             <img src="obj${i}.svg" alt="Product" class="product-icon">
         </div>
         <div class="product-info">
-            <div class="product-name">code.${i.toString().padStart(2, '0')} ${productData[i - 1].name}</div>
+            <div class="product-name">${productData[i - 1].name}</div>
         </div>
     `;
     card.addEventListener('click', () => openAuctionRoom(i));
