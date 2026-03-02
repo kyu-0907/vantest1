@@ -185,29 +185,9 @@ function initAutoScroll() {
     if (autoScrollId) cancelAnimationFrame(autoScrollId);
     const slider = document.querySelector('.products-slider');
     let scrollPos = 0;
-    let isInteracting = false;
-
-    // 마우스나 터치 시 일시정지
-    slider.addEventListener('mouseenter', () => isInteracting = true);
-    slider.addEventListener('mouseleave', () => {
-        isInteracting = false;
-        scrollPos = slider.scrollLeft; // 뗀 지점부터 다시 시작
-    });
-    slider.addEventListener('mousedown', () => isInteracting = true);
-    window.addEventListener('mouseup', () => {
-        if (imacProducts.classList.contains('active')) {
-            isInteracting = false;
-            scrollPos = slider.scrollLeft;
-        }
-    });
-    slider.addEventListener('touchstart', () => isInteracting = true);
-    slider.addEventListener('touchend', () => {
-        isInteracting = false;
-        scrollPos = slider.scrollLeft;
-    });
 
     function scroll() {
-        if (imacProducts.classList.contains('active') && !isInteracting) {
+        if (imacProducts.classList.contains('active')) {
             scrollPos += 0.8;
             slider.scrollLeft = scrollPos;
 
@@ -915,4 +895,31 @@ if (rankingHomeBtn) {
         location.reload(); // 처음으로: 페이지 새로고침하여 초기 상태로
     });
 }
+
+// 상단 로고 클릭 시 첫 화면으로 돌아가기
+const headerLogo = document.querySelector('.header-logo-img');
+if (headerLogo) {
+    headerLogo.addEventListener('click', () => {
+        location.reload();
+    });
+}
+
+// 5분(300,000ms) 이상 미입력 시 첫 화면으로 돌아가기 (Inactivity Timer)
+let inactivityTimer;
+const INACTIVITY_TIME = 5 * 60 * 1000; // 5분
+
+function resetInactivityTimer() {
+    clearTimeout(inactivityTimer);
+    inactivityTimer = setTimeout(() => {
+        location.reload();
+    }, INACTIVITY_TIME);
+}
+
+// 사용자 작업 감지 시 타이머 리셋
+['mousedown', 'mousemove', 'keypress', 'scroll', 'touchstart'].forEach(eventName => {
+    document.addEventListener(eventName, resetInactivityTimer, true);
+});
+
+// 초기 타이머 시작
+resetInactivityTimer();
 

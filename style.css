@@ -282,6 +282,12 @@ video {
     height: 4vw;
     width: auto;
     transform: translateX(17%);
+    cursor: pointer;
+    transition: opacity 0.3s ease;
+}
+
+.header-logo-img:hover {
+    opacity: 0.8;
 }
 
 .products-slider {
