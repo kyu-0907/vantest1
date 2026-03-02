@@ -253,6 +253,12 @@ video {
 .imac-overlay.zoomed .login-logo {
     width: 12vw;
     margin-bottom: 3.5vw;
+    cursor: pointer;
+    transition: opacity 0.3s ease;
+}
+
+.login-logo:hover {
+    opacity: 0.8;
 }
 
 .login-container {
