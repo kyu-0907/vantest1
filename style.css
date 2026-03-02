@@ -488,7 +488,7 @@ video {
     display: flex;
     flex-direction: column;
     position: relative;
-    border: 1px solid #1a1a1a;
+    border: 1px solid #dcdcdc;
     margin-bottom: 2vw;
 }
 
@@ -504,8 +504,8 @@ video {
 
 .corner-dot {
     position: absolute;
-    width: 6px;
-    height: 6px;
+    width: 9px;
+    height: 9px;
     background: #555;
     border-radius: 50%;
     z-index: 5;
@@ -592,7 +592,7 @@ video {
 .info-row.sub {
     flex-direction: column;
     align-items: center;
-    margin-top: 4vw;
+    margin-top: 3vw;
 }
 
 .info-row.sub p {
