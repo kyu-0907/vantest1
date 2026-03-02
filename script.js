@@ -904,13 +904,14 @@ if (headerLogo) {
     });
 }
 
-// 5분(300,000ms) 이상 미입력 시 첫 화면으로 돌아가기 (Inactivity Timer)
+// 3분(180,000ms) 이상 미입력 시 첫 화면으로 돌아가기 (Inactivity Timer)
 let inactivityTimer;
-const INACTIVITY_TIME = 5 * 60 * 1000; // 5분
+const INACTIVITY_TIME = 3 * 60 * 1000; // 3분
 
 function resetInactivityTimer() {
     clearTimeout(inactivityTimer);
     inactivityTimer = setTimeout(() => {
+        console.log("Inactivity detected. Returning to home...");
         location.reload();
     }, INACTIVITY_TIME);
 }
